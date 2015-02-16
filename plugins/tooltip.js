@@ -133,9 +133,17 @@ tooltip.prototype.select = function(e) {
   }
 
   if (tooltipMode === 'follow') {
+    //hide outside of chart
+    if(points[0].x < 0 || points[0].x > 1) {
+      this.tooltip_div_.style.display = 'none';
+      return;
+    }
+
     // create floating tooltip div
     var area = e.dygraph.plotter_.area;
-    var tooltipDivWidth = e.dygraph.getOption('tooltipDivWidth');
+    this.tooltip_div_.style.display = '';
+
+    var tooltipDivWidth = this.tooltip_div_.offsetWidth;
     var yAxisLabelWidth = e.dygraph.getOptionForAxis('axisLabelWidth', 'y');
     // determine floating [left, top] coordinates of the tooltip div
     // within the plotter_ area
@@ -146,7 +154,7 @@ tooltip.prototype.select = function(e) {
 
     // if tooltip floats to end of the window area, it flips to the other
     // side of the selection point
-    if ((leftTooltip + tooltipDivWidth + 1) > (window.scrollX + window.innerWidth)) {
+    if ((leftTooltip + tooltipDivWidth + 1) > area.w) {
       leftTooltip = leftTooltip - 2 * 20 - tooltipDivWidth - (yAxisLabelWidth - area.x);
     }
 
@@ -168,6 +176,7 @@ tooltip.prototype.deselect = function(e) {
 
   var html = tooltip.generateTooltipHTML(e.dygraph, undefined, undefined, oneEmWidth, null);
   this.tooltip_div_.innerHTML = html;
+  this.tooltip_div_.style.display = 'none';
 };
 
 tooltip.prototype.didDrawChart = function(e) {
