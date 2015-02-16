@@ -63,22 +63,6 @@ var DygraphCanvasRenderer = function(dygraph, element, elementContext, layout) {
 
   // internal state
   this.area = layout.getPlotArea();
-
-  // Set up a clipping area for the canvas (and the interaction canvas).
-  // This ensures that we don't overdraw.
-  // on Android 3 and 4, setting a clipping area on a canvas prevents it from
-  // displaying anything.
-  if (!Dygraph.isAndroid()) {
-    var ctx = this.dygraph_.canvas_ctx_;
-    ctx.beginPath();
-    ctx.rect(this.area.x, this.area.y, this.area.w, this.area.h);
-    ctx.clip();
-
-    ctx = this.dygraph_.hidden_ctx_;
-    ctx.beginPath();
-    ctx.rect(this.area.x, this.area.y, this.area.w, this.area.h);
-    ctx.clip();
-  }
 };
 
 /**
@@ -104,6 +88,10 @@ DygraphCanvasRenderer.prototype.render = function() {
 
   // actually draws the chart.
   this._renderLineChart();
+  // On Android 3 and 4, setting a clipping area on a canvas prevents it from
+  // displaying anything, so do not use cliping and clear parts outside the clipping area instead
+  this.elementContext.clearRect(0, 0, this.area.x, this.height); // left
+  this.elementContext.clearRect(this.area.x + this.area.w, 0, this.width, this.height); // right
 };
 
 /**

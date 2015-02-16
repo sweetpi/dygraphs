@@ -5,7 +5,7 @@
  */
 /*global Dygraph:false */
 
-Dygraph.Plugins.Legend = (function() {
+Dygraph.Plugins.Tooltip = (function() {
 /*
 Current bits of jankiness:
 - Uses two private APIs:
@@ -20,22 +20,22 @@ Current bits of jankiness:
 
 
 /**
- * Creates the legend, which appears when the user hovers over the chart.
- * The legend can be either a user-specified or generated div.
+ * Creates the tooltip, which appears when the user hovers over the chart.
+ * The tooltip can be either a user-specified or generated div.
  *
  * @constructor
  */
-var legend = function() {
-  this.legend_div_ = null;
+var tooltip = function() {
+  this.tooltip_div_ = null;
   this.is_generated_div_ = false;  // do we own this div, or was it user-specified?
 };
 
-legend.prototype.toString = function() {
-  return "Legend Plugin";
+tooltip.prototype.toString = function() {
+  return "Tooltip Plugin";
 };
 
 // (defined below)
-var generateLegendDashHTML;
+var generateTooltipDashHTML;
 
 /**
  * This is called during the dygraph constructor, after options have been set
@@ -49,11 +49,11 @@ var generateLegendDashHTML;
  * @param {Dygraph} g Graph instance.
  * @return {object.<string, function(ev)>} Mapping of event names to callbacks.
  */
-legend.prototype.activate = function(g) {
+tooltip.prototype.activate = function(g) {
   var div;
-  var divWidth = g.getOption('labelsDivWidth');
+  var divWidth = g.getOption('tooltipDivWidth');
 
-  var userLabelsDiv = g.getOption('labelsDiv');
+  var userLabelsDiv = g.getOption('tooltipDiv');
   if (userLabelsDiv && null !== userLabelsDiv) {
     if (typeof(userLabelsDiv) == "string" || userLabelsDiv instanceof String) {
       div = document.getElementById(userLabelsDiv);
@@ -61,7 +61,7 @@ legend.prototype.activate = function(g) {
       div = userLabelsDiv;
     }
   } else {
-    // Default legend styles. These can be overridden in CSS by adding
+    // Default tooltip styles. These can be overridden in CSS by adding
     // "!important" after your rule, e.g. "left: 30px !important;"
     var messagestyle = {
       "position": "absolute",
@@ -78,7 +78,7 @@ legend.prototype.activate = function(g) {
     // TODO(danvk): get rid of labelsDivStyles? CSS is better.
     Dygraph.update(messagestyle, g.getOption('labelsDivStyles'));
     div = document.createElement("div");
-    div.className = "dygraph-legend";
+    div.className = "dygraph-tooltip";
     for (var name in messagestyle) {
       if (!messagestyle.hasOwnProperty(name)) continue;
 
@@ -95,7 +95,7 @@ legend.prototype.activate = function(g) {
     this.is_generated_div_ = true;
   }
 
-  this.legend_div_ = div;
+  this.tooltip_div_ = div;
   this.one_em_width_ = 10;  // just a guess, will be updated.
 
   return {
@@ -121,60 +121,56 @@ var escapeHTML = function(str) {
   return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 };
 
-legend.prototype.select = function(e) {
+tooltip.prototype.select = function(e) {
   var xValue = e.selectedX;
   var points = e.selectedPoints;
   var row = e.selectedRow;
 
-  var legendMode = e.dygraph.getOption('legend');
-  if (legendMode === 'never') {
-    this.legend_div_.style.display = 'none';
+  var tooltipMode = e.dygraph.getOption('tooltip');
+  if (tooltipMode === 'never') {
+    this.tooltip_div_.style.display = 'none';
     return;
   }
 
-  if (legendMode === 'follow') {
-    // create floating legend div
+  if (tooltipMode === 'follow') {
+    // create floating tooltip div
     var area = e.dygraph.plotter_.area;
-    var labelsDivWidth = e.dygraph.getOption('labelsDivWidth');
+    var tooltipDivWidth = e.dygraph.getOption('tooltipDivWidth');
     var yAxisLabelWidth = e.dygraph.getOptionForAxis('axisLabelWidth', 'y');
-    // determine floating [left, top] coordinates of the legend div
+    // determine floating [left, top] coordinates of the tooltip div
     // within the plotter_ area
     // offset 20 px to the right and down from the first selection point
     // 20 px is guess based on mouse cursor size
-    var leftLegend = points[0].x * area.w + 20;
-    var topLegend  = points[0].y * area.h - 20;
+    var leftTooltip = points[0].x * area.w + 20;
+    var topTooltip  = points[0].y * area.h - 20;
 
-    // if legend floats to end of the window area, it flips to the other
+    // if tooltip floats to end of the window area, it flips to the other
     // side of the selection point
-    if ((leftLegend + labelsDivWidth + 1) > (window.scrollX + window.innerWidth)) {
-      leftLegend = leftLegend - 2 * 20 - labelsDivWidth - (yAxisLabelWidth - area.x);
+    if ((leftTooltip + tooltipDivWidth + 1) > (window.scrollX + window.innerWidth)) {
+      leftTooltip = leftTooltip - 2 * 20 - tooltipDivWidth - (yAxisLabelWidth - area.x);
     }
 
-    e.dygraph.graphDiv.appendChild(this.legend_div_);
-    this.legend_div_.style.left = yAxisLabelWidth + leftLegend + "px";
-    this.legend_div_.style.top = topLegend + "px";
+    e.dygraph.graphDiv.appendChild(this.tooltip_div_);
+    this.tooltip_div_.style.left = yAxisLabelWidth + leftTooltip + "px";
+    this.tooltip_div_.style.top = topTooltip + "px";
   }
 
-  var html = legend.generateLegendHTML(e.dygraph, xValue, points, this.one_em_width_, row);
-  this.legend_div_.innerHTML = html;
-  this.legend_div_.style.display = '';
+  var html = tooltip.generateTooltipHTML(e.dygraph, xValue, points, this.one_em_width_, row);
+  this.tooltip_div_.innerHTML = html;
+  this.tooltip_div_.style.display = '';
 };
 
-legend.prototype.deselect = function(e) {
-  var legendMode = e.dygraph.getOption('legend');
-  if (legendMode !== 'always') {
-    this.legend_div_.style.display = "none";
-  }
-
+tooltip.prototype.deselect = function(e) {
+  var tooltipMode = e.dygraph.getOption('tooltip');
   // Have to do this every time, since styles might have changed.
-  var oneEmWidth = calculateEmWidthInDiv(this.legend_div_);
+  var oneEmWidth = calculateEmWidthInDiv(this.tooltip_div_);
   this.one_em_width_ = oneEmWidth;
 
-  var html = legend.generateLegendHTML(e.dygraph, undefined, undefined, oneEmWidth, null);
-  this.legend_div_.innerHTML = html;
+  var html = tooltip.generateTooltipHTML(e.dygraph, undefined, undefined, oneEmWidth, null);
+  this.tooltip_div_.innerHTML = html;
 };
 
-legend.prototype.didDrawChart = function(e) {
+tooltip.prototype.didDrawChart = function(e) {
   this.deselect(e);
 };
 
@@ -187,64 +183,59 @@ legend.prototype.didDrawChart = function(e) {
  * - its top edge is flush with the top edge of the charting area
  * @private
  */
-legend.prototype.predraw = function(e) {
+tooltip.prototype.predraw = function(e) {
   // Don't touch a user-specified labelsDiv.
   if (!this.is_generated_div_) return;
 
   // TODO(danvk): only use real APIs for this.
-  e.dygraph.graphDiv.appendChild(this.legend_div_);
+  e.dygraph.graphDiv.appendChild(this.tooltip_div_);
   var area = e.dygraph.plotter_.area;
-  var labelsDivWidth = e.dygraph.getOption("labelsDivWidth");
-  this.legend_div_.style.left = area.x + area.w - labelsDivWidth - 1 + "px";
-  this.legend_div_.style.top = area.y + "px";
-  this.legend_div_.style.width = labelsDivWidth + "px";
+  var tooltipDivWidth = e.dygraph.getOption("tooltipDivWidth");
+  this.tooltip_div_.style.left = area.x + area.w - tooltipDivWidth - 1 + "px";
+  this.tooltip_div_.style.top = area.y + "px";
+  this.tooltip_div_.style.width = tooltipDivWidth + "px";
 };
 
 /**
  * Called when dygraph.destroy() is called.
  * You should null out any references and detach any DOM elements.
  */
-legend.prototype.destroy = function() {
-  this.legend_div_ = null;
+tooltip.prototype.destroy = function() {
+  this.tooltip_div_ = null;
 };
 
 /**
  * @private
- * Generates HTML for the legend which is displayed when hovering over the
- * chart. If no selected points are specified, a default legend is returned
+ * Generates HTML for the tooltip which is displayed when hovering over the
+ * chart. If no selected points are specified, a default tooltip is returned
  * (this may just be the empty string).
  * @param {number} x The x-value of the selected points.
  * @param {Object} sel_points List of selected points for the given
  *   x-value. Should have properties like 'name', 'yval' and 'canvasy'.
- * @param {number} oneEmWidth The pixel width for 1em in the legend. Only
- *   relevant when displaying a legend with no selection (i.e. {legend:
+ * @param {number} oneEmWidth The pixel width for 1em in the tooltip. Only
+ *   relevant when displaying a tooltip with no selection (i.e. {tooltip:
  *   'always'}) and with dashed lines.
  * @param {number} row The selected row index.
  */
-legend.generateLegendHTML = function(g, x, sel_points, oneEmWidth, row) {
-  // TODO(danvk): deprecate this option in place of {legend: 'never'}
+tooltip.generateTooltipHTML = function(g, x, sel_points, oneEmWidth, row) {
+  // TODO(danvk): deprecate this option in place of {tooltip: 'never'}
   if (g.getOption('showLabelsOnHighlight') !== true) return '';
 
-  // If no points are selected, we display a default legend. Traditionally,
-  // this has been blank. But a better default would be a conventional legend,
+  // If no points are selected, we display a default tooltip. Traditionally,
+  // this has been blank. But a better default would be a conventional tooltip,
   // which provides essential information for a non-interactive chart.
   var html, sepLines, i, dash, strokePattern;
   var labels = g.getLabels();
 
-  if (g.getOption('staticLegend') || typeof(x) === 'undefined') {
-    if (g.getOption('legend') != 'always') {
-      return '';
-    }
-
-    sepLines = g.getOption('labelsSeparateLines');
+  if (typeof(x) === 'undefined') {
     html = '';
     for (i = 1; i < labels.length; i++) {
       var series = g.getPropertiesForSeries(labels[i]);
       if (!series.visible) continue;
 
-      if (html !== '') html += (sepLines ? '<br/>' : ' ');
+      if (html !== '') html += '<br/>';
       strokePattern = g.getOption("strokePattern", labels[i]);
-      dash = generateLegendDashHTML(strokePattern, series.color, oneEmWidth);
+      dash = generateTooltipDashHTML(strokePattern, series.color, oneEmWidth);
       html += "<span style='font-weight: bold; color: " + series.color + ";'>" +
           dash + " <span class=\"label\">" + escapeHTML(labels[i]) + "</span></span>";
     }
@@ -266,18 +257,17 @@ legend.generateLegendHTML = function(g, x, sel_points, oneEmWidth, row) {
     yOptViews[i] = g.optionsViewForAxis_('y' + (i ? 1 + i : ''));
   }
   var showZeros = g.getOption("labelsShowZeroValues");
-  sepLines = g.getOption("labelsSeparateLines");
   var highlightSeries = g.getHighlightSeries();
   for (i = 0; i < sel_points.length; i++) {
     var pt = sel_points[i];
     if (pt.yval === 0 && !showZeros) continue;
     if (!Dygraph.isOK(pt.canvasy)) continue;
-    if (sepLines) html += "<br/>";
+    html += "<br/>";
 
     var series = g.getPropertiesForSeries(pt.name);
     var yOptView = yOptViews[series.axis - 1];
     var fmtFunc = yOptView('valueFormatter');
-    var yval = fmtFunc.call(g, pt.yval, yOptView, pt.name, g, row, labels.indexOf(pt.name));
+    var yval = fmtFunc.call(g, pt.yval, yOptView, pt.name, g, row, labels.indexOf(pt.name)) ;
 
     var cls = (pt.name == highlightSeries) ? " class='highlight'" : "";
 
@@ -290,17 +280,17 @@ legend.generateLegendHTML = function(g, x, sel_points, oneEmWidth, row) {
 
 
 /**
- * Generates html for the "dash" displayed on the legend when using "legend: always".
+ * Generates html for the "dash" displayed on the tooltip when using "tooltip: always".
  * In particular, this works for dashed lines with any stroke pattern. It will
  * try to scale the pattern to fit in 1em width. Or if small enough repeat the
  * pattern for 1em width.
  *
  * @param strokePattern The pattern
  * @param color The color of the series.
- * @param oneEmWidth The width in pixels of 1em in the legend.
+ * @param oneEmWidth The width in pixels of 1em in the tooltip.
  * @private
  */
-generateLegendDashHTML = function(strokePattern, color, oneEmWidth) {
+generateTooltipDashHTML = function(strokePattern, color, oneEmWidth) {
   // Easy, common case: a solid line
   if (!strokePattern || strokePattern.length <= 1) {
     return "<div style=\"display: inline-block; position: relative; " +
@@ -330,7 +320,7 @@ generateLegendDashHTML = function(strokePattern, color, oneEmWidth) {
     // first segment in one draw.
     segmentLoop = normalizedPattern.length;
   } else {
-    // If the pattern doesn't fit in the legend we scale it to fit.
+    // If the pattern doesn't fit in the tooltip we scale it to fit.
     loop = 1;
     for (i = 0; i < strokePattern.length; i++) {
       normalizedPattern[i] = strokePattern[i]/strokePixelLength;
@@ -362,5 +352,5 @@ generateLegendDashHTML = function(strokePattern, color, oneEmWidth) {
 };
 
 
-return legend;
+return tooltip;
 })();

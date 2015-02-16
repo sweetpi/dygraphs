@@ -444,11 +444,23 @@ Dygraph.OPTIONS_REFERENCE =  // <JSON>
     "type": "boolean",
     "description": "Whether to hide the legend when the mouse leaves the chart area."
   },
+  "tooltip": {
+    "default": "follow",
+    "labels": ["Legend"],
+    "type": "string",
+    "description": "When set to \"follow\" show a tooltip following highlighted points."
+  },
   "legend": {
     "default": "onmouseover",
     "labels": ["Legend"],
     "type": "string",
     "description": "When to display the legend. By default, it only appears when a user mouses over the chart. Set it to \"always\" to always display a legend of some sort. When set to \"follow\", legend follows highlighted points."
+  },
+  "staticLegend": {
+    "default": "false",
+    "labels": ["Legend"],
+    "type": "boolean",
+    "description": "Don't show selected values in legend"
   },
   "labelsShowZeroValues": {
     "default": "true",

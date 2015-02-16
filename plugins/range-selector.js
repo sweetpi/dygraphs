@@ -672,6 +672,9 @@ rangeSelector.prototype.computeCombinedSeriesAndLimits_ = function() {
       count++;
       sum += y;
     }
+    if(count === 0) {
+      continue;
+    }
     combinedSeries.push([rolledSeries[0][i][0], sum / count]);
   }
 
