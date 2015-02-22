@@ -1324,9 +1324,9 @@ Dygraph.prototype.setColors_ = function() {
   var colors = this.getOption('colors');
   var visibility = this.visibility();
   for (var i = 0; i < num; i++) {
-    if (!visibility[i]) {
-      continue;
-    }
+    // if (!visibility[i]) {
+    //   continue;
+    // }
     var label = labels[i + 1];
     var colorStr = this.attributes_.getForSeries('color', label);
     if (!colorStr) {
@@ -1805,6 +1805,9 @@ Dygraph.prototype.doAnimatedZoom = function(oldXRange, newXRange, oldYRanges, ne
 
   var that = this;
   Dygraph.repeatAndCleanup(function(step) {
+    if(!that.canvas_) {
+      return;
+    }
     if (valueRanges.length) {
       for (var i = 0; i < that.axes_.length; i++) {
         var w = valueRanges[step][i];
@@ -2044,6 +2047,9 @@ Dygraph.prototype.animateSelection_ = function(direction) {
   var that = this;
   Dygraph.repeatAndCleanup(
     function(n) {
+      if(!that.canvas_) {
+        return;
+      }
       // ignore simultaneous animations
       if (that.animateId != thisId) return;
 
@@ -2097,6 +2103,7 @@ Dygraph.prototype.updateSelection_ = function(opt_animFraction) {
     // Redraw only the highlighted series in the interactive canvas (not the
     // static plot canvas, which is where series are usually drawn).
     this.plotter_._renderLineChart(this.highlightSet_, ctx);
+    this.plotter_.clip(ctx);
   } else if (this.previousVerticalX_ >= 0) {
     // Determine the maximum highlight circle size.
     var maxCircleSize = 0;
@@ -2658,12 +2665,11 @@ Dygraph.prototype.drawGraph_ = function() {
 
   this.setIndexByName_ = {};
   var labels = this.attr_("labels");
-  if (labels.length > 0) {
-    this.setIndexByName_[labels[0]] = 0;
+  for (var i = 0; i < this.rolledSeries_.length; i++) {
+    this.setIndexByName_[labels[i]] = i;
   }
   var dataIdx = 0;
   for (var i = 1; i < points.length; i++) {
-    this.setIndexByName_[labels[i]] = i;
     if (!this.visibility()[i - 1]) continue;
     this.layout_.addDataset(labels[i], points[i]);
     this.datasetIndex_[i] = dataIdx++;

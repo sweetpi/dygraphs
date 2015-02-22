@@ -95,6 +95,18 @@ legend.prototype.activate = function(g) {
     this.is_generated_div_ = true;
   }
 
+  var self = this;
+  g.addAndTrackEvent(div, 'click', function(event) {
+    if(self.legend_div_) {
+      if(event.target.className.match(/\blabel\b/)) {
+        var series = event.target.innerText;
+        var visibility = g.visibility();
+        var num = g.indexFromSetName(series)-1;
+        g.setVisibility(num, !visibility[num]);
+      }
+    }
+  });
+
   this.legend_div_ = div;
   this.one_em_width_ = 10;  // just a guess, will be updated.
 
@@ -240,13 +252,12 @@ legend.generateLegendHTML = function(g, x, sel_points, oneEmWidth, row) {
     html = '';
     for (i = 1; i < labels.length; i++) {
       var series = g.getPropertiesForSeries(labels[i]);
-      if (!series.visible) continue;
-
+      var labelClass = "label " + (series.visible ? "series-visible" : "series-invisible");
       if (html !== '') html += (sepLines ? '<br/>' : ' ');
       strokePattern = g.getOption("strokePattern", labels[i]);
       dash = generateLegendDashHTML(strokePattern, series.color, oneEmWidth);
       html += "<span style='font-weight: bold; color: " + series.color + ";'>" +
-          dash + " <span class=\"label\">" + escapeHTML(labels[i]) + "</span></span>";
+          dash + " <span class=\"" + labelClass + "\">" + escapeHTML(labels[i]) + "</span></span>";
     }
     return html;
   }

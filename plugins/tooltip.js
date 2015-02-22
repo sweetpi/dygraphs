@@ -95,6 +95,13 @@ tooltip.prototype.activate = function(g) {
     this.is_generated_div_ = true;
   }
 
+  var self = this;
+  g.addAndTrackEvent(div, 'click', function(event) {
+    if(self.tooltip_div_) {
+      self.tooltip_div_.style.display = 'none'; 
+    }
+  });
+
   this.tooltip_div_ = div;
   this.one_em_width_ = 10;  // just a guess, will be updated.
 
@@ -122,6 +129,7 @@ var escapeHTML = function(str) {
 };
 
 tooltip.prototype.select = function(e) {
+
   var xValue = e.selectedX;
   var points = e.selectedPoints;
   var row = e.selectedRow;
@@ -129,6 +137,10 @@ tooltip.prototype.select = function(e) {
   var tooltipMode = e.dygraph.getOption('tooltip');
   if (tooltipMode === 'never') {
     this.tooltip_div_.style.display = 'none';
+    return;
+  }
+
+  if(points.length === 0) {
     return;
   }
 
@@ -144,22 +156,39 @@ tooltip.prototype.select = function(e) {
     this.tooltip_div_.style.display = '';
 
     var tooltipDivWidth = this.tooltip_div_.offsetWidth;
-    var yAxisLabelWidth = e.dygraph.getOptionForAxis('axisLabelWidth', 'y');
+    var tooltipDivHeight = this.tooltip_div_.offsetHeight;
     // determine floating [left, top] coordinates of the tooltip div
     // within the plotter_ area
     // offset 20 px to the right and down from the first selection point
     // 20 px is guess based on mouse cursor size
-    var leftTooltip = points[0].x * area.w + 20;
-    var topTooltip  = points[0].y * area.h - 20;
+    var leftTooltip = points[0].x * area.w;
+    var topTooltip = area.h;
 
+    var selectedSeries = e.dygraph.getHighlightSeries();
+    var y = points[0].y;
+    if(selectedSeries) {
+      for(var i=0; i < points.length; i++) {
+        if(points[i].name === selectedSeries) {
+          y = points[i].y;
+        }
+      }
+    } else {
+      for(var i=0; i < points.length; i++) {
+        y = Math.min(y, points[i].y);
+      }
+
+    }
+    topTooltip = y * area.h + 10;
     // if tooltip floats to end of the window area, it flips to the other
     // side of the selection point
-    if ((leftTooltip + tooltipDivWidth + 1) > area.w) {
-      leftTooltip = leftTooltip - 2 * 20 - tooltipDivWidth - (yAxisLabelWidth - area.x);
+    if(leftTooltip - tooltipDivWidth/2 < 0) {
+      leftTooltip += tooltipDivWidth/2 - 20;
+    } else if ((leftTooltip + tooltipDivWidth + 1) > area.w) {
+      leftTooltip = leftTooltip - tooltipDivWidth/2 + 20;
     }
-
+    //console.log(topTooltip, tooltipDivHeight);
     e.dygraph.graphDiv.appendChild(this.tooltip_div_);
-    this.tooltip_div_.style.left = yAxisLabelWidth + leftTooltip + "px";
+    this.tooltip_div_.style.left = (area.x + leftTooltip - tooltipDivWidth/2) + "px";
     this.tooltip_div_.style.top = topTooltip + "px";
   }
 

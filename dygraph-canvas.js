@@ -88,11 +88,15 @@ DygraphCanvasRenderer.prototype.render = function() {
 
   // actually draws the chart.
   this._renderLineChart();
-  // On Android 3 and 4, setting a clipping area on a canvas prevents it from
-  // displaying anything, so do not use cliping and clear parts outside the clipping area instead
-  this.elementContext.clearRect(0, 0, this.area.x, this.height); // left
-  this.elementContext.clearRect(this.area.x + this.area.w, 0, this.width, this.height); // right
+  this.clip(this.elementContext);
 };
+
+
+DygraphCanvasRenderer.prototype.clip = function(ctx) {
+  ctx.clearRect(0, 0, this.area.x, this.height); // left
+  ctx.clearRect(this.area.x + this.area.w, 0, this.width, this.height); // right
+};
+
 
 /**
  * Returns a predicate to be used with an iterator, which will
@@ -244,6 +248,11 @@ DygraphCanvasRenderer._drawSeries = function(e,
     }
     first = false;
   }
+  if(stepPlot && prevCanvasX !== null && prevCanvasY !== null) {
+    // draw line from point to right border
+    ctx.lineTo(prevCanvasX+10000, prevCanvasY);
+  }
+
   ctx.stroke();
   return pointsOnLine;
 };

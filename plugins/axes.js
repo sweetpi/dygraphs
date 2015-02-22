@@ -117,7 +117,7 @@ axes.prototype.willDrawChart = function(e) {
       width: g.getOptionForAxis('axisLabelWidth', axis) + 'px',
       // height: g.getOptionForAxis('axisLabelFontSize', 'x') + 2 + "px",
       lineHeight: 'normal',  // Something other than "normal" line-height screws up label positioning.
-      overflow: 'hidden'
+      //overflow: 'hidden'
     };
   };
 
